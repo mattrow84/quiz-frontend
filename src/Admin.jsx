@@ -39,9 +39,74 @@ export default function Admin() {
     setCurrentIndex(index);
   };
 
+  // Funzione per importare file JSON/CSV
+  const handleImportFile = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target.result;
+      if (file.name.endsWith(".json")) {
+        try {
+          const data = JSON.parse(text);
+          if (Array.isArray(data)) {
+            setQuestions(data.map(normalizeQ));
+            alert("Domande caricate da JSON!");
+          } else {
+            alert("JSON non valido");
+          }
+        } catch {
+          alert("Errore nel JSON");
+        }
+      } else {
+        // Trattiamo come CSV/TESTO
+        const rows = text.split(/\r?\n/).filter(Boolean);
+        const data = [];
+        for (let i = 0; i < rows.length; i++) {
+          const cols = rows[i].split(";");
+          if (cols.length < 5) continue;
+          data.push({
+            question: cols[0],
+            options: { A: cols[1], B: cols[2], C: cols[3], D: cols[4] }
+          });
+        }
+        if (data.length) {
+          setQuestions(data);
+          alert("Domande caricate da CSV!");
+        } else {
+          alert("File vuoto o formato errato.");
+        }
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const normalizeQ = (q) => ({
+    question: q.question || "",
+    options: {
+      A: q.options?.A || "",
+      B: q.options?.B || "",
+      C: q.options?.C || "",
+      D: q.options?.D || ""
+    }
+  });
+
   return (
     <div style={{ padding: 20, maxWidth: 800, margin: "0 auto" }}>
       <h1>Admin Panel</h1>
+      {/* Import file */}
+      <div style={{ marginBottom: "20px" }}>
+        <label>
+          Importa domande (JSON o CSV):
+          <input
+            type="file"
+            accept=".json,.csv,.txt"
+            onChange={handleImportFile}
+            style={{ display: "block", marginTop: "8px" }}
+          />
+        </label>
+      </div>
+      {/* Lista domande */}
       {questions.map((q, i) => (
         <div
           key={i}
